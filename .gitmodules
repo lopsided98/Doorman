@@ -1,0 +1,3 @@
+[submodule "AMIS30543"]
+	path = AMIS30543
+	url = git@github.com:pololu/amis-30543-arduino.git
