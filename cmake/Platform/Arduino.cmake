@@ -363,7 +363,7 @@ function(GENERATE_ARDUINO_LIBRARY INPUT_NAME)
     parse_generator_arguments(${INPUT_NAME} INPUT
                               "NO_AUTOLIBS;MANUAL"                  # Options
                               "BOARD"                               # One Value Keywords
-                              "SRCS;HDRS;LIBS"                      # Multi Value Keywords
+                              "SRCS;HDRS;LIBS"              # Multi Value Keywords
                               ${ARGN})
 
     if(NOT INPUT_BOARD)
@@ -381,7 +381,7 @@ function(GENERATE_ARDUINO_LIBRARY INPUT_NAME)
       setup_arduino_core(CORE_LIB ${INPUT_BOARD})
     endif()
 
-    find_arduino_libraries(TARGET_LIBS "${ALL_SRCS}" "")
+    find_arduino_libraries(TARGET_LIBS "${ALL_SRCS}" "" "${INPUT_BOARD}")
     set(LIB_DEP_INCLUDES)
     foreach(LIB_DEP ${TARGET_LIBS})
         set(LIB_DEP_INCLUDES "${LIB_DEP_INCLUDES} -I\"${LIB_DEP}\"")
@@ -497,7 +497,7 @@ function(GENERATE_ARDUINO_FIRMWARE INPUT_NAME)
 
     required_variables(VARS ALL_SRCS MSG "must define SRCS or SKETCH for target ${INPUT_NAME}")
 
-    find_arduino_libraries(TARGET_LIBS "${ALL_SRCS}" "${INPUT_ARDLIBS}")
+    find_arduino_libraries(TARGET_LIBS "${ALL_SRCS}" "${INPUT_ARDLIBS}" "${INPUT_BOARD}")
     foreach(LIB_DEP ${TARGET_LIBS})
         arduino_debug_msg("Arduino Library: ${LIB_DEP}")
         set(LIB_DEP_INCLUDES "${LIB_DEP_INCLUDES} -I\"${LIB_DEP}\" -I\"${LIB_DEP}/src\"")
@@ -611,13 +611,13 @@ function(GENERATE_ARDUINO_EXAMPLE INPUT_NAME)
 
     setup_arduino_core(CORE_LIB ${INPUT_BOARD})
 
-    setup_arduino_example("${INPUT_NAME}" "${INPUT_LIBRARY}" "${INPUT_EXAMPLE}" ALL_SRCS)
+    setup_arduino_example("${INPUT_NAME}" "${INPUT_LIBRARY}" "${INPUT_EXAMPLE}" "${INPUT_BOARD}" ALL_SRCS)
 
     if(NOT ALL_SRCS)
         message(FATAL_ERROR "Missing sources for example, aborting!")
     endif()
 
-    find_arduino_libraries(TARGET_LIBS "${ALL_SRCS}" "")
+    find_arduino_libraries(TARGET_LIBS "${ALL_SRCS}" "" "${INPUT_BOARD}")
     set(LIB_DEP_INCLUDES)
     foreach(LIB_DEP ${TARGET_LIBS})
         set(LIB_DEP_INCLUDES "${LIB_DEP_INCLUDES} -I\"${LIB_DEP}\"")
@@ -721,6 +721,9 @@ function(REGISTER_HARDWARE_PLATFORM PLATFORM)
 
     if(${PLATFORM}_BOARDS_PATH)
         load_arduino_style_settings(${PLATFORM}_BOARDS "${${PLATFORM}_BOARDS_PATH}")
+        foreach(BOARD ${${PLATFORM}_BOARDS})
+            set(${BOARD}.platform ${PLATFORM} CACHE INTERNAL "Board platform")
+        endforeach()
     endif()
 
     if(${PLATFORM}_PROGRAMMERS_PATH)
@@ -947,7 +950,7 @@ endfunction()
 #  to be part of that Arduino library.
 #
 #=============================================================================#
-function(find_arduino_libraries VAR_NAME SRCS ARDLIBS)
+function(find_arduino_libraries VAR_NAME SRCS ARDLIBS BOARD)
     get_property(include_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
     
     set(ARDUINO_LIBS )
@@ -978,7 +981,7 @@ function(find_arduino_libraries VAR_NAME SRCS ARDLIBS)
                     get_property(LIBRARY_SEARCH_PATH
                                  DIRECTORY     # Property Scope
                                  PROPERTY LINK_DIRECTORIES)
-                    foreach(LIB_SEARCH_PATH ${include_dirs} ${LIBRARY_SEARCH_PATH} ${ARDUINO_LIBRARIES_PATH} ${${ARDUINO_PLATFORM}_LIBRARIES_PATH} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/libraries ${ARDUINO_EXTRA_LIBRARIES_PATH})
+                    foreach(LIB_SEARCH_PATH ${include_dirs} ${LIBRARY_SEARCH_PATH} ${ARDUINO_LIBRARIES_PATH} ${${${BOARD}.platform}_LIBRARIES_PATH} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/libraries ${ARDUINO_EXTRA_LIBRARIES_PATH})
                         if(EXISTS ${LIB_SEARCH_PATH}/${INCLUDE_NAME}/${CMAKE_MATCH_1})
                             list(APPEND ARDUINO_LIBS ${LIB_SEARCH_PATH}/${INCLUDE_NAME})
                             break()
@@ -1058,7 +1061,7 @@ function(setup_arduino_library VAR_NAME BOARD_ID LIB_PATH COMPILE_FLAGS LINK_FLA
 
             get_arduino_flags(ARDUINO_COMPILE_FLAGS ARDUINO_LINK_FLAGS ${BOARD_ID} FALSE)
 
-            find_arduino_libraries(LIB_DEPS "${LIB_SRCS}" "")
+            find_arduino_libraries(LIB_DEPS "${LIB_SRCS}" "" "${BOARD_ID}")
 
             foreach(LIB_DEP ${LIB_DEPS})
 	        if(NOT DEP_LIB_SRCS STREQUAL TARGET_LIB_NAME AND DEP_LIB_SRCS)
@@ -1116,7 +1119,7 @@ function(setup_arduino_libraries VAR_NAME BOARD_ID SRCS ARDLIBS COMPILE_FLAGS LI
     set(LIB_TARGETS)
     set(LIB_INCLUDES)
 
-    find_arduino_libraries(TARGET_LIBS "${SRCS}" ARDLIBS)
+    find_arduino_libraries(TARGET_LIBS "${SRCS}" "${ARDLIBS}" "${BOARD_ID}")
     foreach(TARGET_LIB ${TARGET_LIBS})
         # Create static library instead of returning sources
         setup_arduino_library(LIB_DEPS ${BOARD_ID} ${TARGET_LIB} "${COMPILE_FLAGS}" "${LINK_FLAGS}")
@@ -1771,13 +1774,13 @@ endfunction()
 #
 # Creates a Arduino example from a the specified library.
 #=============================================================================#
-function(SETUP_ARDUINO_EXAMPLE TARGET_NAME LIBRARY_NAME EXAMPLE_NAME OUTPUT_VAR)
+function(SETUP_ARDUINO_EXAMPLE TARGET_NAME LIBRARY_NAME EXAMPLE_NAME BOARD OUTPUT_VAR)
     set(EXAMPLE_SKETCH_PATH )
 
     get_property(LIBRARY_SEARCH_PATH
                  DIRECTORY     # Property Scope
                  PROPERTY LINK_DIRECTORIES)
-    foreach(LIB_SEARCH_PATH ${LIBRARY_SEARCH_PATH} ${ARDUINO_LIBRARIES_PATH} ${${ARDUINO_PLATFORM}_LIBRARIES_PATH} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/libraries)
+    foreach(LIB_SEARCH_PATH ${LIBRARY_SEARCH_PATH} ${ARDUINO_LIBRARIES_PATH} ${${${BOARD}.platform}_LIBRARIES_PATH} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/libraries)
         message(STATUS "Search ${LIBRARY_NAME} example directory in ${LIB_SEARCH_PATH}")
         if(EXISTS "${LIB_SEARCH_PATH}/${LIBRARY_NAME}/examples/${EXAMPLE_NAME}")
             set(EXAMPLE_SKETCH_PATH "${LIB_SEARCH_PATH}/${LIBRARY_NAME}/examples/${EXAMPLE_NAME}")
