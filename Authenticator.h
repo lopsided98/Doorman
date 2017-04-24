@@ -2,10 +2,15 @@
 #define DOORMAN_AUTHENTICATOR_H
 
 
+#include <avr/io.h>
+
 class Authenticator {
 
 public:
-    Authenticator(void (*callback)(void));
+
+    virtual void init() {};
+
+    virtual bool waitForAttempt() = 0;
 };
 
 

@@ -3,7 +3,7 @@
 
 class Lock {
 public:
-    virtual void init();
+    virtual void init() {};
 
     virtual void unlock() = 0;
 

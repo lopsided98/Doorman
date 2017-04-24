@@ -4,12 +4,11 @@
 #include <Arduino.h>
 #include <AMIS30543.h>
 #include "Lock.h"
+#include "StepperControl.h"
 
 class StepperLock : public Lock {
 public:
-    StepperLock(const uint8_t ssPin,
-                const uint8_t nxtPin,
-                const uint8_t slaPin);
+    StepperLock(StepperControl &stepper);
 
     virtual void init();
 
@@ -18,12 +17,7 @@ public:
     virtual void unlock();
 
 private:
-    AMIS30543 stepper;
-    const uint8_t nxtPin;
-    const uint8_t ssPin;
-    const uint8_t slaPin;
-
-    void rotate(int degrees);
+    StepperControl &stepper;
 };
 
 #endif //DOORMAN_STEPPERLOCK_H
