@@ -20,6 +20,8 @@ public:
      */
     void setSpeed(const unsigned int speed);
 
+    void rotateUntilStall(const bool direction, const bool block);
+
     void rotate(const int degrees, const bool block);
 
 private:
@@ -35,8 +37,13 @@ private:
 
     volatile bool running = false;
     volatile uint32_t steps = 0;
+    volatile bool direction = false;
+    volatile uint8_t stepNum = 0;
+    volatile bool stallDetect = false;
+    volatile uint16_t emfAvg = 1023;
 
     void start();
+
     void stop();
 
     static void stepISR();

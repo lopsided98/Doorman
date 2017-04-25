@@ -3,7 +3,7 @@
 #include "StepperLock.h"
 #include "RFIDAuthenticator.h"
 
-static const unsigned int STEPPER_CURRENT = 1000;
+static const unsigned int STEPPER_CURRENT = 500;
 static const unsigned int STEPPER_STEPS_PER_REVOLUTION = 200;
 static const uint8_t STEPPER_SS_PIN = 10;
 static const uint8_t STEPPER_NXT_PIN = 8;
@@ -38,9 +38,8 @@ void setup() {
     lock.init();
 
     // Power saving functions
-    //power_timer1_disable();
-    //power_timer2_disable();
-    //power_twi_disable();
+    power_timer2_disable();
+    power_twi_disable();
 
     Serial.println("Initialization complete.");
 }
@@ -48,7 +47,7 @@ void setup() {
 void loop() {
     if (authenticator.waitForAttempt()) {
         lock.lock();
-        delay(2000);
-        lock.unlock();
+        delay(500);
+//        lock.unlock();
     }
 }

@@ -8,7 +8,7 @@ void StepperLock::init() {
 }
 
 void StepperLock::lock() {
-    stepper.rotate(180, true);
+    stepper.rotateUntilStall(true, true);
 }
 
 void StepperLock::unlock() {

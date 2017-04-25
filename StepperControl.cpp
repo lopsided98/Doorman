@@ -1,8 +1,10 @@
 #include <TimerOne.h>
+#include <wiring_private.h>
 #include "StepperControl.h"
 
 static const AMIS30543::stepMode STEP_MODE = AMIS30543::stepMode::MicroStep32;
 static const unsigned int DEFAULT_SPEED = 360;
+static const uint16_t STALL_EMF = 100;
 
 StepperControl *StepperControl::instance = NULL;
 
@@ -20,10 +22,25 @@ StepperControl::StepperControl(AMIS30543 &stepper, const uint8_t nxtPin,
 void StepperControl::init() {
     nxtPin.config(OUTPUT, LOW);
 
+    // Increase ADC frequency to 1 MHz
+    sbi(ADCSRA, ADPS2);
+    cbi(ADCSRA, ADPS1);
+    cbi(ADCSRA, ADPS0);
+
     // Initialize settings
     stepper.setStepMode(STEP_MODE);
     stepper.stepOnRisingEdge();
-    stepper.setSlaTransparencyOff();
+
+    // Turn SLA transparency on so that a delay is not necessary after the next
+    // step before reading the SLA input.
+    // See http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.364.4376&rep=rep1&type=pdf
+    // page 19-20
+    stepper.setSlaTransparencyOn();
+
+    // Initialize step number
+    Serial.println(stepper.readPosition());
+    stepNum = stepper.readPosition() / (128 / STEP_MODE);
+    Serial.println(stepNum);
 
     stepper.enableDriver();
     stepper.sleep();
@@ -35,19 +52,32 @@ void StepperControl::init() {
 }
 
 void StepperControl::setSpeed(const unsigned int speed) {
-    noInterrupts();
     unsigned long period =
             (1000000U * 360U) / (abs(speed) * stepsPerRevolution);
-    Serial.print(period);
-    Serial.println();
+    noInterrupts();
     Timer1.setPeriod(period);
     interrupts();
 }
 
-void StepperControl::rotate(const int degrees, const bool block) {
+void StepperControl::rotateUntilStall(const bool direction, const bool block) {
     noInterrupts();
-    stepper.setDirection(degrees > 0);
+    stepper.setDirection(direction);
+    this->direction = direction;
+    steps = UINT32_MAX;
+    stallDetect = true;
+    start();
+    interrupts();
+
+    if (block) while (running);
+}
+
+void StepperControl::rotate(const int degrees, const bool block) {
+    bool direction = degrees > 0;
+    noInterrupts();
+    stepper.setDirection(direction);
+    this->direction = direction;
     steps = (abs(degrees) * stepsPerRevolution) / 360U;
+    stallDetect = false;
     start();
     interrupts();
 
@@ -63,22 +93,42 @@ void StepperControl::start() {
 }
 
 void StepperControl::stop() {
-    if (running) {
-        running = false;
-        Timer1.stop();
-        instance->stepper.sleep();
-    }
+    running = false;
 }
 
 void StepperControl::stepISR() {
+    static DigitalPin<3> pin3;
+
     if (instance->steps > 0) {
         instance->nxtPin.highI();
-        delayMicroseconds(3);
+        if (instance->stallDetect &&
+            ((instance->stepNum % STEP_MODE) == 0)) {
+            // ADC read takes ~20us, giving us enough high time on the
+            // NXT pin
+            pin3.high();
+            uint16_t emf = (uint16_t) analogRead(instance->slaPin);
+            pin3.low();
+            // Filter emf
+            instance->emfAvg = (instance->emfAvg * 3 + emf) / 4;
+            if (instance->emfAvg <= STALL_EMF) {
+                instance->running = false;
+            }
+        } else {
+            // If we don't read the ADC, we have add a busy wait to ensure the
+            // pin stays high long enough
+            delayMicroseconds(3);
+        }
         instance->nxtPin.lowI();
+        instance->stepNum += (instance->direction) ? 1 : -1;
         --(instance->steps);
     } else {
-        instance->stop();
+        instance->running = false;
     }
 
-
+    if (!instance->running) {
+        // Reset emf average
+        instance->emfAvg = 1023;
+        Timer1.stop();
+        instance->stepper.sleep();
+    }
 }
