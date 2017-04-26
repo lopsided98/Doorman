@@ -56,12 +56,16 @@ void StepperControl::setSpeed(const unsigned int speed) {
     interrupts();
 }
 
-void StepperControl::rotateUntilStall(const bool direction, const bool block) {
+void
+StepperControl::rotateUntilStall(const bool direction, const bool block,
+                                 const unsigned long timeout) {
     noInterrupts();
     stepper.setDirection(direction);
     this->direction = direction;
     steps = UINT32_MAX;
     stallDetect = true;
+    startTime = millis();
+    this->timeout = timeout;
     start();
     interrupts();
 
@@ -75,6 +79,8 @@ void StepperControl::rotate(const int degrees, const bool block) {
     this->direction = direction;
     steps = (abs(degrees) * stepsPerRevolution) / 360U;
     stallDetect = false;
+    startTime = millis();
+    this->timeout = UINT32_MAX;
     start();
     interrupts();
 
@@ -96,7 +102,8 @@ void StepperControl::stop() {
 void StepperControl::stepISR() {
     static DigitalPin<3> pin3;
 
-    if (instance->steps > 0) {
+    if (instance->steps > 0 &&
+        (millis() - instance->startTime < instance->timeout)) {
         instance->nxtPin.highI();
         if (instance->stallDetect &&
             ((instance->stepNum % STEP_MODE) == 0)) {
