@@ -31,16 +31,13 @@ void StepperControl::init() {
     stepper.setStepMode(STEP_MODE);
     stepper.stepOnRisingEdge();
 
-    // Turn SLA transparency on so that a delay is not necessary after the next
-    // step before reading the SLA input.
-    // See http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.364.4376&rep=rep1&type=pdf
-    // page 19-20
-    stepper.setSlaTransparencyOn();
-
-    // Initialize step number
-    Serial.println(stepper.readPosition());
-    stepNum = stepper.readPosition() / (128 / STEP_MODE);
-    Serial.println(stepNum);
+    // Turn SLA transparency off to avoid spikes in the signal. I was going to
+    // implement the SLA algorithm as described here:
+    // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.364.4376&rep=rep1&type=pdf
+    // but for some reason I can't sample at the correct step consistently. The
+    // current algorithm should work fine as long as the chip does not get too
+    // hot and cause the signal to sag.
+    stepper.setSlaTransparencyOff();
 
     stepper.enableDriver();
     stepper.sleep();
