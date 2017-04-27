@@ -46,8 +46,6 @@ void setup() {
 
 void loop() {
     if (authenticator.waitForAttempt()) {
-        lock.lock();
-        delay(500);
-//        lock.unlock();
+        lock.toggle();
     }
 }

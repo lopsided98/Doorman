@@ -5,9 +5,17 @@ class Lock {
 public:
     virtual void init() {};
 
-    virtual void unlock() = 0;
+    virtual void unlock();
 
-    virtual void lock() = 0;
+    virtual void lock();
+
+    void toggle();
+
+    virtual bool isLocked();
+
+protected:
+
+    bool locked;
 };
 
 #endif // DOORMAN_LOCK_H
