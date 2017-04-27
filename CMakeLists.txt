@@ -11,9 +11,9 @@ set(DigitalIO_RECURSE True)
 
 generate_arduino_firmware(Doorman
         SRCS Doorman.cpp Lock.cpp StepperLock.cpp Authenticator.cpp
-        RFIDAuthenticator.cpp StepperControl.cpp
+        RFIDAuthenticator.cpp StepperControl.cpp DummyLock.cpp
         HDRS Lock.h StepperLock.h Authenticator.h RFIDAuthenticator.h
-        StepperControl.h
+        StepperControl.h DummyLock.h
         BOARD uno
         ARDLIBS SoftwareSerial)
 
