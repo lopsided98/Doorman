@@ -9,10 +9,10 @@ void StepperLock::init() {
 
 void StepperLock::lock() {
     Lock::lock();
-    stepper.rotateUntilStall(true, true, 3000);
+    stepper.rotateUntilStall(true, true, 1500);
 }
 
 void StepperLock::unlock() {
     Lock::unlock();
-    stepper.rotate(-180, true);
+    stepper.rotateUntilStall(false, true, 1500);
 }

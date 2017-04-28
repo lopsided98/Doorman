@@ -11,10 +11,14 @@ public:
 
     RFIDAuthenticator(const uint8_t rx, const uint8_t tx);
 
-    virtual bool waitForAttempt();
+    virtual bool waitForAuthentication();
 
 private:
     SeeedRFIDLib rfid;
+
+    bool enrollID(uint32_t id);
+    bool checkID(uint32_t id);
+
 };
 
 

@@ -10,7 +10,7 @@ public:
 
     virtual void init() {};
 
-    virtual bool waitForAttempt() = 0;
+    virtual bool waitForAuthentication() = 0;
 };
 
 

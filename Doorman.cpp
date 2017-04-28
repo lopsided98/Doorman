@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <avr/sleep.h>
 #include <avr/power.h>
 #include "StepperLock.h"
 #include "RFIDAuthenticator.h"
@@ -15,6 +16,8 @@ AMIS30543 stepperDriver;
 StepperControl stepperControl(stepperDriver, STEPPER_NXT_PIN, STEPPER_SLA_PIN,
                               STEPPER_STEPS_PER_REVOLUTION);
 StepperLock lock(stepperControl);
+
+void sleep();
 
 void setup() {
     Serial.begin(9600);
@@ -41,11 +44,25 @@ void setup() {
     power_timer2_disable();
     power_twi_disable();
 
+    set_sleep_mode(SLEEP_MODE_IDLE);
+
     Serial.println("Initialization complete.");
+    delay(100);
 }
 
 void loop() {
-    if (authenticator.waitForAttempt()) {
+    sleep();
+    Serial.println("test");
+    if (authenticator.waitForAuthentication()) {
         lock.toggle();
     }
+    delayMicroseconds(100);
+}
+
+void sleep() {
+    noInterrupts();
+    sleep_enable();
+    interrupts();
+    sleep_cpu();
+    sleep_disable();
 }

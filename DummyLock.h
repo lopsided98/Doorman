@@ -1,7 +1,3 @@
-//
-// Created by ben on 4/20/17.
-//
-
 #ifndef DOORMAN_DUMMYLOCK_H
 #define DOORMAN_DUMMYLOCK_H
 
