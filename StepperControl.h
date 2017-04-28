@@ -20,10 +20,8 @@ public:
      */
     void setSpeed(const unsigned int speed);
 
-    void rotateUntilStall(const bool direction, const bool block = true,
-                          const unsigned long timeout = (unsigned long) -1);
-
-    void rotate(const int degrees, const bool block = true);
+    void rotate(const int degrees, const bool block = true,
+                const bool stallDetect = false);
 
 private:
 
@@ -42,8 +40,6 @@ private:
     volatile uint8_t stepNum = 0;
     volatile bool stallDetect = false;
     volatile uint16_t emfAvg = 1023;
-    volatile unsigned long startTime;
-    volatile unsigned long timeout = UINT32_MAX;
 
     void start();
 

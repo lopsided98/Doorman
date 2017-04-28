@@ -43,7 +43,6 @@ void setup() {
     // Power saving functions
     power_timer2_disable();
     power_twi_disable();
-
     set_sleep_mode(SLEEP_MODE_IDLE);
 
     Serial.println("Initialization complete.");

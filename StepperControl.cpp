@@ -4,7 +4,7 @@
 
 static const AMIS30543::stepMode STEP_MODE = AMIS30543::stepMode::MicroStep32;
 static const unsigned int DEFAULT_SPEED = 360;
-static const uint16_t STALL_EMF = 100;
+static const uint16_t STALL_EMF = 75;
 
 StepperControl *StepperControl::instance = NULL;
 
@@ -56,31 +56,14 @@ void StepperControl::setSpeed(const unsigned int speed) {
     interrupts();
 }
 
-void
-StepperControl::rotateUntilStall(const bool direction, const bool block,
-                                 const unsigned long timeout) {
-    noInterrupts();
-    stepper.setDirection(direction);
-    this->direction = direction;
-    steps = UINT32_MAX;
-    stallDetect = true;
-    startTime = millis();
-    this->timeout = timeout;
-    start();
-    interrupts();
-
-    if (block) while (running);
-}
-
-void StepperControl::rotate(const int degrees, const bool block) {
+void StepperControl::rotate(const int degrees, const bool block,
+                            const bool stallDetect) {
     bool direction = degrees > 0;
     noInterrupts();
     stepper.setDirection(direction);
     this->direction = direction;
     steps = (abs(degrees) * stepsPerRevolution) / 360U;
-    stallDetect = false;
-    startTime = millis();
-    this->timeout = UINT32_MAX;
+    this->stallDetect = stallDetect;
     start();
     interrupts();
 
@@ -102,8 +85,7 @@ void StepperControl::stop() {
 void StepperControl::stepISR() {
     static DigitalPin<3> pin3;
 
-    if (instance->steps > 0 &&
-        (millis() - instance->startTime < instance->timeout)) {
+    if (instance->steps > 0) {
         instance->nxtPin.highI();
         if (instance->stallDetect &&
             ((instance->stepNum % STEP_MODE) == 0)) {
