@@ -4,7 +4,7 @@
 #include "StepperLock.h"
 #include "RFIDAuthenticator.h"
 
-static const unsigned int STEPPER_CURRENT = 500;
+static const unsigned int STEPPER_CURRENT = 1000;
 static const unsigned int STEPPER_STEPS_PER_REVOLUTION = 200;
 static const uint8_t STEPPER_SS_PIN = 10;
 static const uint8_t STEPPER_NXT_PIN = 8;

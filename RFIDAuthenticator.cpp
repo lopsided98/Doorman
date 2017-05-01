@@ -1,7 +1,7 @@
 #include <EEPROM.h>
 #include "RFIDAuthenticator.h"
 
-static const uint8_t MAGIC_BYTE = 0x7B;
+static const uint8_t MAGIC_BYTE = 0x7C;
 static const uint16_t MAGIC_BYTE_ADDR = 0x0;
 
 static const uint16_t LENGTH_ADDR = 0x1;

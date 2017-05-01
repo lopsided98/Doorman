@@ -4,7 +4,7 @@
 
 static const AMIS30543::stepMode STEP_MODE = AMIS30543::stepMode::MicroStep32;
 static const unsigned int DEFAULT_SPEED = 360;
-static const uint16_t STALL_EMF = 75;
+static const uint16_t STALL_EMF = 125;
 
 StepperControl *StepperControl::instance = NULL;
 
