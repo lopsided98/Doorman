@@ -4,7 +4,9 @@ cmake_minimum_required(VERSION 2.8)
 
 project(Doorman C CXX)
 
-set(ARDUINO_DEFAULT_PORT /dev/ttyACM0)
+set(ARDUINO_DEFAULT_PORT /dev/ttyUSB0)
+# This is an ugly hack that should really be implemented differently
+set(ARDUINO_CPUMENU .menu.cpu.16MHzatmega328)
 
 # Enable recursion for the DigitalIO library
 set(DigitalIO_RECURSE True)
@@ -14,8 +16,8 @@ generate_arduino_firmware(Doorman
         RFIDAuthenticator.cpp StepperControl.cpp DummyLock.cpp
         HDRS Lock.h StepperLock.h Authenticator.h RFIDAuthenticator.h
         StepperControl.h DummyLock.h
-        BOARD uno
+        BOARD pro
         ARDLIBS SoftwareSerial)
 
 # Fix linking order
-target_link_libraries(Doorman uno_SoftwareSerial)
+target_link_libraries(Doorman pro_SoftwareSerial)
