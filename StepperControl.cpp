@@ -67,11 +67,21 @@ void StepperControl::rotate(const int degrees, const bool block,
     start();
     interrupts();
 
-    if (block) while (running);
+    if (block) {
+        while (running) {
+//            Serial.print("emfAvg: ");
+//            Serial.println(emfAvg);
+        }
+    }
+//    delayMicroseconds(100);
+//    Serial.print("final: ");
+//    Serial.println(emfAvg);
 }
 
 void StepperControl::start() {
     if (!running) {
+        // Reset emf average
+        emfAvg = 1023;
         stepper.sleepStop();
         running = true;
         Timer1.resume();
@@ -83,20 +93,15 @@ void StepperControl::stop() {
 }
 
 void StepperControl::stepISR() {
-    static DigitalPin<3> pin3;
-
     if (instance->steps > 0) {
         instance->nxtPin.highI();
         if (instance->stallDetect &&
             ((instance->stepNum % STEP_MODE) == 0)) {
             // ADC read takes ~20us, giving us enough high time on the
-            // NXT pin
-            pin3.high();
             uint16_t emf = (uint16_t) analogRead(instance->slaPin);
-            pin3.low();
             // Filter emf
-            instance->emfAvg = (instance->emfAvg * 3 + emf) / 4;
-            if (instance->emfAvg <= STALL_EMF) {
+            instance->emfAvg = (instance->emfAvg * 2 + emf) / 3;
+            if (instance->emfAvg < STALL_EMF) {
                 instance->running = false;
             }
         } else {
@@ -112,8 +117,6 @@ void StepperControl::stepISR() {
     }
 
     if (!instance->running) {
-        // Reset emf average
-        instance->emfAvg = 1023;
         Timer1.stop();
         instance->stepper.sleep();
     }

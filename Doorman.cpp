@@ -10,7 +10,7 @@ static const uint8_t STEPPER_SS_PIN = 10;
 static const uint8_t STEPPER_NXT_PIN = 8;
 static const uint8_t STEPPER_SLA_PIN = A1;
 
-RFIDAuthenticator authenticator(3, 2);
+RFIDAuthenticator authenticator(2, 3);
 
 AMIS30543 stepperDriver;
 StepperControl stepperControl(stepperDriver, STEPPER_NXT_PIN, STEPPER_SLA_PIN,
@@ -51,11 +51,9 @@ void setup() {
 
 void loop() {
     sleep();
-    Serial.println("test");
     if (authenticator.waitForAuthentication()) {
         lock.toggle();
     }
-    delayMicroseconds(100);
 }
 
 void sleep() {

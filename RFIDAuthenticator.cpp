@@ -40,6 +40,7 @@ RFIDAuthenticator::RFIDAuthenticator(const uint8_t rx, const uint8_t tx) :
     if (EEPROM[MAGIC_BYTE_ADDR] != MAGIC_BYTE) {
         EEPROM[MAGIC_BYTE_ADDR] = MAGIC_BYTE;
         write_uint16(LENGTH_ADDR, 0);
+        enrollID(15032277);
     }
 }
 
