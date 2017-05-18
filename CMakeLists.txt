@@ -5,8 +5,9 @@ cmake_minimum_required(VERSION 2.8)
 project(Doorman C CXX)
 
 set(ARDUINO_DEFAULT_PORT /dev/ttyUSB0)
+set(ARDUINO_DEFAULT_PROGRAMMER avrispmkii)
 # This is an ugly hack that should really be implemented differently
-set(ARDUINO_CPUMENU .menu.cpu.16MHzatmega328)
+#set(ARDUINO_CPUMENU .menu.cpu.16MHzatmega328)
 
 # Enable recursion for the DigitalIO library
 set(DigitalIO_RECURSE True)
@@ -17,6 +18,7 @@ generate_arduino_firmware(Doorman
         HDRS Lock.h StepperLock.h Authenticator.h RFIDAuthenticator.h
         StepperControl.h DummyLock.h
         BOARD pro
+        CPU 16MHzatmega328
         ARDLIBS SoftwareSerial)
 
 # Fix linking order
