@@ -7,6 +7,7 @@
 
 #define array_length(array) (sizeof(array) / sizeof((array)[0]))
 
+static const unsigned int STEPPER_SPEED = 1000;
 static const unsigned int STEPPER_CURRENT = 1000;
 static const unsigned int STEPPER_STEPS_PER_REVOLUTION = 200;
 static const uint8_t STEPPER_SS_PIN = 10;
@@ -45,7 +46,7 @@ void setup() {
 
     // Initialize control algorithm
     stepperControl.init();
-    stepperControl.setSpeed(1000);
+    stepperControl.setSpeed(STEPPER_SPEED);
     lock.init();
 
     // Power saving functions
