@@ -11,7 +11,7 @@ public:
 
     RFIDAuthenticator(const uint8_t rx, const uint8_t tx);
 
-    virtual bool waitForAuthentication();
+    virtual Command getCommand();
 
 private:
     SeeedRFIDLib rfid;

@@ -44,15 +44,14 @@ RFIDAuthenticator::RFIDAuthenticator(const uint8_t rx, const uint8_t tx) :
     }
 }
 
-bool RFIDAuthenticator::waitForAuthentication() {
-    while (true) {
-        if (rfid.isIdAvailable()) {
-            RFIDTag tag = rfid.readId();
-            Serial.print("Tag ID: ");
-            Serial.println(tag.id);
-            return checkID((uint32_t) tag.id);
-        }
+Authenticator::Command RFIDAuthenticator::getCommand() {
+    if (rfid.isIdAvailable()) {
+        RFIDTag tag = rfid.readId();
+        Serial.print("Tag ID: ");
+        Serial.println(tag.id);
+        if (checkID((uint32_t) tag.id)) return TOGGLE;
     }
+    return NONE;
 }
 
 bool RFIDAuthenticator::enrollID(uint32_t id) {

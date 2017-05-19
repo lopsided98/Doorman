@@ -8,9 +8,16 @@ class Authenticator {
 
 public:
 
+    enum Command {
+        NONE = 0,
+        UNLOCK,
+        LOCK,
+        TOGGLE,
+    };
+
     virtual void init() {};
 
-    virtual bool waitForAuthentication() = 0;
+    virtual Command getCommand() = 0;
 };
 
 

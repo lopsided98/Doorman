@@ -3,6 +3,9 @@
 #include <avr/power.h>
 #include "StepperLock.h"
 #include "RFIDAuthenticator.h"
+#include "SerialAuthenticator.h"
+
+#define array_length(array) (sizeof(array)/sizeof((array)[0]))
 
 static const unsigned int STEPPER_CURRENT = 1000;
 static const unsigned int STEPPER_STEPS_PER_REVOLUTION = 200;
@@ -10,7 +13,10 @@ static const uint8_t STEPPER_SS_PIN = 10;
 static const uint8_t STEPPER_NXT_PIN = 8;
 static const uint8_t STEPPER_SLA_PIN = A1;
 
-RFIDAuthenticator authenticator(2, 3);
+RFIDAuthenticator rfidAuthenticator = RFIDAuthenticator(2, 3);
+SerialAuthenticator serialAuthenticator;
+Authenticator *authenticators[] = {&rfidAuthenticator,
+                                   &serialAuthenticator};
 
 AMIS30543 stepperDriver;
 StepperControl stepperControl(stepperDriver, STEPPER_NXT_PIN, STEPPER_SLA_PIN,
@@ -24,7 +30,9 @@ void setup() {
 
     Serial.println("Starting...");
 
-    authenticator.init();
+    for (unsigned int i = 0; i < array_length(authenticators); ++i) {
+        authenticators[i]->init();
+    }
 
     SPI.begin();
     stepperDriver.init(STEPPER_SS_PIN);
@@ -51,8 +59,23 @@ void setup() {
 
 void loop() {
     sleep();
-    if (authenticator.waitForAuthentication()) {
-        lock.toggle();
+    Authenticator::Command command;
+    for (unsigned int i = 0; i < array_length(authenticators); ++i) {
+        if ((command = authenticators[i]->getCommand())) {
+            switch (command) {
+                case Authenticator::Command::TOGGLE:
+                    lock.toggle();
+                    break;
+                case Authenticator::Command::LOCK:
+                    lock.lock();
+                    break;
+                case Authenticator::Command::UNLOCK:
+                    lock.unlock();
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }
 
