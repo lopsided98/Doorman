@@ -47,7 +47,7 @@ RFIDAuthenticator::RFIDAuthenticator(const uint8_t rx, const uint8_t tx) :
 Authenticator::Command RFIDAuthenticator::getCommand() {
     if (rfid.isIdAvailable()) {
         RFIDTag tag = rfid.readId();
-        Serial.print("Tag ID: ");
+        Serial.print("Scanned tag: ");
         Serial.println(tag.id);
         if (checkID((uint32_t) tag.id)) return TOGGLE;
     }
@@ -68,10 +68,8 @@ bool RFIDAuthenticator::enrollID(uint32_t id) {
 
 bool RFIDAuthenticator::checkID(uint32_t id) {
     uint16_t len = read_uint16(LENGTH_ADDR);
-    Serial.println(len);
     for (uint16_t i = 0; i < len; ++i) {
         uint32_t db_id = read_uint32((i * 4) + DATA_START_ADDR);
-        Serial.println(db_id);
         if (db_id == id) return true;
     }
     return false;

@@ -5,7 +5,7 @@
 #include "RFIDAuthenticator.h"
 #include "SerialAuthenticator.h"
 
-#define array_length(array) (sizeof(array)/sizeof((array)[0]))
+#define array_length(array) (sizeof(array) / sizeof((array)[0]))
 
 static const unsigned int STEPPER_CURRENT = 1000;
 static const unsigned int STEPPER_STEPS_PER_REVOLUTION = 200;
@@ -59,22 +59,22 @@ void setup() {
 
 void loop() {
     sleep();
-    Authenticator::Command command;
     for (unsigned int i = 0; i < array_length(authenticators); ++i) {
-        if ((command = authenticators[i]->getCommand())) {
-            switch (command) {
-                case Authenticator::Command::TOGGLE:
-                    lock.toggle();
-                    break;
-                case Authenticator::Command::LOCK:
-                    lock.lock();
-                    break;
-                case Authenticator::Command::UNLOCK:
-                    lock.unlock();
-                    break;
-                default:
-                    break;
-            }
+        switch (authenticators[i]->getCommand()) {
+            case Authenticator::Command::TOGGLE:
+                Serial.println("Received command: toggle");
+                lock.toggle();
+                break;
+            case Authenticator::Command::LOCK:
+                Serial.println("Received command: lock");
+                lock.lock();
+                break;
+            case Authenticator::Command::UNLOCK:
+                Serial.println("Received command: unlock");
+                lock.unlock();
+                break;
+            default:
+                break;
         }
     }
 }
