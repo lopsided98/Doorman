@@ -14,22 +14,22 @@ static const uint8_t STEPPER_SS_PIN = 10;
 static const uint8_t STEPPER_NXT_PIN = 8;
 static const uint8_t STEPPER_SLA_PIN = A1;
 
-RFIDAuthenticator rfidAuthenticator = RFIDAuthenticator(2, 3);
-SerialAuthenticator serialAuthenticator;
-Authenticator *authenticators[] = {&rfidAuthenticator,
-                                   &serialAuthenticator};
-
 AMIS30543 stepperDriver;
 StepperControl stepperControl(stepperDriver, STEPPER_NXT_PIN, STEPPER_SLA_PIN,
                               STEPPER_STEPS_PER_REVOLUTION);
 StepperLock lock(stepperControl);
+
+RFIDAuthenticator rfidAuthenticator(2, 3);
+SerialAuthenticator serialAuthenticator(lock);
+Authenticator *authenticators[] = {&rfidAuthenticator,
+                                   &serialAuthenticator};
 
 void sleep();
 
 void setup() {
     Serial.begin(9600);
 
-    Serial.println("Starting...");
+    Serial.println("# Starting...");
 
     for (unsigned int i = 0; i < array_length(authenticators); ++i) {
         authenticators[i]->init();
@@ -54,7 +54,7 @@ void setup() {
     power_twi_disable();
     set_sleep_mode(SLEEP_MODE_IDLE);
 
-    Serial.println("Initialization complete.");
+    Serial.println("# Initialization complete.");
     delay(100);
 }
 
@@ -63,15 +63,15 @@ void loop() {
     for (unsigned int i = 0; i < array_length(authenticators); ++i) {
         switch (authenticators[i]->getCommand()) {
             case Authenticator::Command::TOGGLE:
-                Serial.println("Received command: toggle");
+                Serial.println("# Received command: toggle");
                 lock.toggle();
                 break;
             case Authenticator::Command::LOCK:
-                Serial.println("Received command: lock");
+                Serial.println("# Received command: lock");
                 lock.lock();
                 break;
             case Authenticator::Command::UNLOCK:
-                Serial.println("Received command: unlock");
+                Serial.println("# Received command: unlock");
                 lock.unlock();
                 break;
             default:

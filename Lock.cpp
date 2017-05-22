@@ -2,12 +2,12 @@
 #include "Lock.h"
 
 void Lock::unlock() {
-    Serial.println("Unlocking...");
+    Serial.println("# Unlocking...");
     locked = false;
 }
 
 void Lock::lock() {
-    Serial.println("Locking...");
+    Serial.println("# Locking...");
     locked = true;
 }
 
