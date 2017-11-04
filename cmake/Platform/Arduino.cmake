@@ -362,7 +362,7 @@ function(GENERATE_ARDUINO_LIBRARY INPUT_NAME)
     message(STATUS "Generating ${INPUT_NAME}")
     parse_generator_arguments(${INPUT_NAME} INPUT
                               "NO_AUTOLIBS;MANUAL"                  # Options
-                              "BOARD"                               # One Value Keywords
+                              "BOARD;CPU"                           # One Value Keywords
                               "SRCS;HDRS;LIBS"              # Multi Value Keywords
                               ${ARGN})
 
@@ -378,7 +378,7 @@ function(GENERATE_ARDUINO_LIBRARY INPUT_NAME)
     set(ALL_SRCS ${INPUT_SRCS} ${INPUT_HDRS})
 
     if(NOT INPUT_MANUAL)
-      setup_arduino_core(CORE_LIB ${INPUT_BOARD})
+      setup_arduino_core(CORE_LIB ${INPUT_BOARD} "${INPUT_CPU}")
     endif()
 
     find_arduino_libraries(TARGET_LIBS "${ALL_SRCS}" "" "${INPUT_BOARD}")
@@ -388,14 +388,14 @@ function(GENERATE_ARDUINO_LIBRARY INPUT_NAME)
     endforeach()
 
     if(NOT ${INPUT_NO_AUTOLIBS})
-        setup_arduino_libraries(ALL_LIBS  ${INPUT_BOARD} "${ALL_SRCS}" "" "${LIB_DEP_INCLUDES}" "")
+        setup_arduino_libraries(ALL_LIBS  ${INPUT_BOARD} "${INPUT_CPU}" "${ALL_SRCS}" "" "${LIB_DEP_INCLUDES}" "")
     endif()
 
     list(APPEND ALL_LIBS ${CORE_LIB} ${INPUT_LIBS})
 
     add_library(${INPUT_NAME} ${ALL_SRCS})
 
-    get_arduino_flags(ARDUINO_COMPILE_FLAGS ARDUINO_LINK_FLAGS  ${INPUT_BOARD} ${INPUT_MANUAL})
+    get_arduino_flags(ARDUINO_COMPILE_FLAGS ARDUINO_LINK_FLAGS  ${INPUT_BOARD} "${INPUT_CPU}" ${INPUT_MANUAL})
 
     set_target_properties(${INPUT_NAME} PROPERTIES
                 COMPILE_FLAGS "${ARDUINO_COMPILE_FLAGS} ${COMPILE_FLAGS} ${LIB_DEP_INCLUDES}"
@@ -500,7 +500,7 @@ function(GENERATE_ARDUINO_FIRMWARE INPUT_NAME)
     find_arduino_libraries(TARGET_LIBS "${ALL_SRCS}" "${INPUT_ARDLIBS}" "${INPUT_BOARD}")
     foreach(LIB_DEP ${TARGET_LIBS})
         arduino_debug_msg("Arduino Library: ${LIB_DEP}")
-        set(LIB_DEP_INCLUDES "${LIB_DEP_INCLUDES} -I\"${LIB_DEP}\" -I\"${LIB_DEP}/src\"")
+        set(LIB_DEP_INCLUDES "${LIB_DEP_INCLUDES} -I\"${LIB_DEP}\"")
     endforeach()
 
     if(NOT INPUT_NO_AUTOLIBS)
@@ -912,7 +912,7 @@ function(setup_arduino_core VAR_NAME BOARD_ID CPU)
             # Debian/Ubuntu fix
             list(REMOVE_ITEM CORE_SRCS "${BOARD_CORE_PATH}/main.cxx")
             add_library(${CORE_LIB_NAME} ${CORE_SRCS})
-            get_arduino_flags(ARDUINO_COMPILE_FLAGS ARDUINO_LINK_FLAGS ${BOARD_ID} ${CPU} FALSE)
+            get_arduino_flags(ARDUINO_COMPILE_FLAGS ARDUINO_LINK_FLAGS ${BOARD_ID} "${CPU}" FALSE)
             set_target_properties(${CORE_LIB_NAME} PROPERTIES
                 COMPILE_FLAGS "${ARDUINO_COMPILE_FLAGS}"
                 LINK_FLAGS "${ARDUINO_LINK_FLAGS}")
@@ -1055,9 +1055,9 @@ function(setup_arduino_library VAR_NAME BOARD_ID CPU LIB_PATH COMPILE_FLAGS LINK
             message(STATUS "Generating ${TARGET_LIB_NAME} for library ${LIB_NAME}")
             arduino_debug_msg("Generating Arduino ${LIB_NAME} library")
             add_library(${TARGET_LIB_NAME} STATIC ${LIB_SRCS})
-            include_directories(${LIB_PATH})
-            include_directories(${LIB_PATH}/src)
-            include_directories(${LIB_PATH}/utility)
+            target_include_directories(${TARGET_LIB_NAME} PUBLIC "${LIB_PATH}")
+            target_include_directories(${TARGET_LIB_NAME} PUBLIC "${LIB_PATH}/src")
+            target_include_directories(${TARGET_LIB_NAME} PUBLIC "${LIB_PATH}/utility")
 
             get_arduino_flags(ARDUINO_COMPILE_FLAGS ARDUINO_LINK_FLAGS ${BOARD_ID} "${CPU}" FALSE)
 
@@ -1066,6 +1066,7 @@ function(setup_arduino_library VAR_NAME BOARD_ID CPU LIB_PATH COMPILE_FLAGS LINK
             foreach(LIB_DEP ${LIB_DEPS})
 	        if(NOT DEP_LIB_SRCS STREQUAL TARGET_LIB_NAME AND DEP_LIB_SRCS)
                   message(STATUS "Found library ${LIB_NAME} needs ${DEP_LIB_SRCS}")
+                  target_link_libraries(${TARGET_LIB_NAME} ${DEP_LIB_SRCS})
 		endif()
 
                 setup_arduino_library(DEP_LIB_SRCS ${BOARD_ID} "${CPU}" ${LIB_DEP} "${COMPILE_FLAGS}" "${LINK_FLAGS}")
