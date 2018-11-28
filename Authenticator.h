@@ -1,9 +1,6 @@
 #ifndef DOORMAN_AUTHENTICATOR_H
 #define DOORMAN_AUTHENTICATOR_H
 
-
-#include <avr/io.h>
-
 class Authenticator {
 
 public:

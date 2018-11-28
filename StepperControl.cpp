@@ -40,6 +40,13 @@ void StepperControl::init() {
     stepper.setSlaTransparencyOff();
 
     stepper.enableDriver();
+    {
+        Serial.println("# Checking for errors:");
+        uint16_t latched = stepper.readLatchedStatusFlagsAndClear();
+        uint16_t unlatched = stepper.readNonLatchedStatusFlags();
+        if (unlatched & AMIS30543::TW) Serial.println("#   Thermal shutdown");
+        if (unlatched & AMIS30543::CPFAIL) Serial.println("#   Charge pump failure");
+    }
     stepper.sleep();
 
     Timer1.initialize();

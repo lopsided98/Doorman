@@ -7,8 +7,8 @@
 
 #define array_length(array) (sizeof(array) / sizeof((array)[0]))
 
-static const unsigned int STEPPER_SPEED = 1000;
-static const unsigned int STEPPER_CURRENT = 1000;
+static const unsigned int STEPPER_SPEED = 700;
+static const unsigned int STEPPER_CURRENT = 1800;
 static const unsigned int STEPPER_STEPS_PER_REVOLUTION = 200;
 static const uint8_t STEPPER_SS_PIN = 10;
 static const uint8_t STEPPER_NXT_PIN = 8;
