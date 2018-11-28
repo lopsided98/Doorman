@@ -1,26 +1,54 @@
-set(CMAKE_TOOLCHAIN_FILE cmake/ArduinoToolchain.cmake) # Arduino Toolchain
+cmake_minimum_required(VERSION 3.2)
+project(Doorman)
 
-cmake_minimum_required(VERSION 2.8)
+include(CMakeListsPrivate.txt)
 
-project(Doorman C CXX)
+add_custom_target(
+    PLATFORMIO_BUILD ALL
+    COMMAND ${PLATFORMIO_CMD} -f -c clion run
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-set(ARDUINO_DEFAULT_PORT /dev/ttyUSB0)
-set(ARDUINO_DEFAULT_PROGRAMMER avrispmkii)
-# This is an ugly hack that should really be implemented differently
-#set(ARDUINO_CPUMENU .menu.cpu.16MHzatmega328)
+add_custom_target(
+    PLATFORMIO_UPLOAD ALL
+    COMMAND ${PLATFORMIO_CMD} -f -c clion run --target upload
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-# Enable recursion for the DigitalIO library
-set(DigitalIO_RECURSE True)
+add_custom_target(
+    PLATFORMIO_CLEAN ALL
+    COMMAND ${PLATFORMIO_CMD} -f -c clion run --target clean
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-generate_arduino_firmware(Doorman
-        SRCS Doorman.cpp Lock.cpp StepperLock.cpp Authenticator.cpp
-        RFIDAuthenticator.cpp StepperControl.cpp DummyLock.cpp
-        SerialAuthenticator.cpp
-        HDRS Lock.h StepperLock.h Authenticator.h RFIDAuthenticator.h
-        StepperControl.h DummyLock.h SerialAuthenticator.h
-        BOARD pro
-        CPU 16MHzatmega328
-        ARDLIBS SoftwareSerial)
+add_custom_target(
+    PLATFORMIO_TEST ALL
+    COMMAND ${PLATFORMIO_CMD} -f -c clion test
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-# Fix linking order
-target_link_libraries(Doorman pro_SoftwareSerial)
+add_custom_target(
+    PLATFORMIO_PROGRAM ALL
+    COMMAND ${PLATFORMIO_CMD} -f -c clion run --target program
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_custom_target(
+    PLATFORMIO_UPLOADFS ALL
+    COMMAND ${PLATFORMIO_CMD} -f -c clion run --target uploadfs
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_custom_target(
+    PLATFORMIO_UPDATE_ALL ALL
+    COMMAND ${PLATFORMIO_CMD} -f -c clion update
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_custom_target(
+    PLATFORMIO_REBUILD_PROJECT_INDEX ALL
+    COMMAND ${PLATFORMIO_CMD} -f -c clion init --ide clion
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_executable(${PROJECT_NAME} ${SRC_LIST})

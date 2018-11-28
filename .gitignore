@@ -1,3 +1,5 @@
 /.idea/
 /cmake-build-*/
-/build/
+.pioenvs
+.piolibdeps
+CMakeListsPrivate.txt

@@ -45,11 +45,11 @@ RFIDAuthenticator::RFIDAuthenticator(const uint8_t rx, const uint8_t tx) :
 }
 
 Authenticator::Command RFIDAuthenticator::getCommand() {
-    if (rfid.isIdAvailable()) {
-        RFIDTag tag = rfid.readId();
+    if (rfid.isAvailable()) {
+        unsigned long id = rfid.cardNumber();
         Serial.print("# Scanned tag: ");
-        Serial.println(tag.id);
-        if (checkID((uint32_t) tag.id)) return TOGGLE;
+        Serial.println(id);
+        if (checkID((uint32_t) id)) return TOGGLE;
     }
     return NONE;
 }
