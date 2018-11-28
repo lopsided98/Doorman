@@ -11,7 +11,7 @@ public:
 
     RFIDAuthenticator(uint8_t rx, uint8_t tx);
 
-    virtual Command getCommand();
+    Command getCommand() override;
 
 private:
     SeeedRFID rfid;

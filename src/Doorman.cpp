@@ -5,8 +5,6 @@
 #include "RFIDAuthenticator.h"
 #include "SerialAuthenticator.h"
 
-#define array_length(array) (sizeof(array) / sizeof((array)[0]))
-
 static const unsigned int STEPPER_SPEED = 700;
 static const unsigned int STEPPER_CURRENT = 1800;
 static const unsigned int STEPPER_STEPS_PER_REVOLUTION = 200;
@@ -31,8 +29,8 @@ void setup() {
 
     Serial.println("# Starting...");
 
-    for (unsigned int i = 0; i < array_length(authenticators); ++i) {
-        authenticators[i]->init();
+    for (auto &authenticator : authenticators) {
+        authenticator->init();
     }
 
     SPI.begin();
@@ -60,8 +58,8 @@ void setup() {
 
 void loop() {
     sleep();
-    for (unsigned int i = 0; i < array_length(authenticators); ++i) {
-        switch (authenticators[i]->getCommand()) {
+    for (auto &authenticator : authenticators) {
+        switch (authenticator->getCommand()) {
             case Authenticator::Command::TOGGLE:
                 Serial.println("# Received command: toggle");
                 lock.toggle();

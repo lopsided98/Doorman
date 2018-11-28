@@ -15,7 +15,7 @@ public:
 
 protected:
 
-    bool locked;
+    bool locked = false;
 };
 
 #endif // DOORMAN_LOCK_H

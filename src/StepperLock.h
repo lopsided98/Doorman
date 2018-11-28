@@ -8,13 +8,13 @@
 
 class StepperLock : public Lock {
 public:
-    StepperLock(StepperControl &stepper);
+    explicit StepperLock(StepperControl &stepper);
 
-    virtual void init();
+    void init() override;
 
-    virtual void lock();
+    void lock() override;
 
-    virtual void unlock();
+    void unlock() override;
 
 private:
     StepperControl &stepper;

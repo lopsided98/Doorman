@@ -5,9 +5,9 @@
 
 class DummyLock : public Lock {
 
-    virtual void lock();
+    void lock() override;
 
-    virtual void unlock();
+    void unlock() override;
 };
 
 

@@ -8,8 +8,8 @@ class StepperControl {
 public:
 
     StepperControl(AMIS30543 &stepper,
-                   const uint8_t nxtPin, const uint8_t slaPin,
-                   const unsigned int stepsPerRevolution);
+                   uint8_t nxtPin, uint8_t slaPin,
+                   unsigned int stepsPerRevolution);
 
     void init();
 
@@ -18,10 +18,10 @@ public:
      *
      * @param speed speed in degrees/sec
      */
-    void setSpeed(const unsigned int speed);
+    void setSpeed(unsigned int speed);
 
-    void rotate(const int degrees, const bool block = true,
-                const bool stallDetect = false);
+    void rotate(int degrees, bool block = true,
+                bool stallDetect = false);
 
 private:
 

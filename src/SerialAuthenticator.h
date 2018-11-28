@@ -10,11 +10,11 @@ class SerialAuthenticator : public Authenticator {
 
 public:
 
-    SerialAuthenticator(Lock &lock);
+    explicit SerialAuthenticator(Lock &lock);
 
-    virtual void init();
+    void init() override;
 
-    virtual Command getCommand();
+    Command getCommand() override;
 
 private:
 
