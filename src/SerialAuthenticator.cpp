@@ -4,9 +4,6 @@
 SerialAuthenticator::SerialAuthenticator(Lock &lock) : lock(lock) {
 }
 
-void SerialAuthenticator::init() {
-}
-
 Authenticator::Command SerialAuthenticator::getCommand() {
     bool commandComplete = false;
     while (Serial.available()) {

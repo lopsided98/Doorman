@@ -29,8 +29,8 @@ private:
 
     AMIS30543 &stepper;
 
-    const uint8_t slaPin;
     PinIO nxtPin;
+    const uint8_t slaPin;
 
     const uint32_t stepsPerRevolution;
 

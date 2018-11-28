@@ -12,8 +12,6 @@ public:
 
     explicit SerialAuthenticator(Lock &lock);
 
-    void init() override;
-
     Command getCommand() override;
 
 private:

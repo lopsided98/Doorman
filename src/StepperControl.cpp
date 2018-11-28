@@ -1,5 +1,6 @@
 #include <TimerOne.h>
 #include <wiring_private.h>
+#include <avr/sleep.h>
 #include "StepperControl.h"
 
 static const AMIS30543::stepMode STEP_MODE = AMIS30543::stepMode::MicroStep32;
@@ -44,8 +45,30 @@ void StepperControl::init() {
         Serial.println("# Checking for errors:");
         uint16_t latched = stepper.readLatchedStatusFlagsAndClear();
         uint16_t unlatched = stepper.readNonLatchedStatusFlags();
-        if (unlatched & AMIS30543::TW) Serial.println("#   Thermal shutdown");
-        if (unlatched & AMIS30543::CPFAIL) Serial.println("#   Charge pump failure");
+        if (latched & (
+                AMIS30543::OVCXNB |
+                AMIS30543::OVCXNT |
+                AMIS30543::OVCXPB |
+                AMIS30543::OVCXPT |
+                AMIS30543::OVCYNB |
+                AMIS30543::OVCYNT |
+                AMIS30543::OVCYPB |
+                AMIS30543::OVCYPT
+        )) {
+            // Short detected, emergency shut down
+            stepper.disableDriver();
+            Serial.println("#   ERROR: Coil short");
+            // Power down until reset
+            noInterrupts();
+            set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+            sleep_enable();
+            sleep_bod_disable();
+            sleep_cpu();
+        }
+        if (unlatched & AMIS30543::TW)
+            Serial.println("#   ERROR: Thermal shutdown");
+        if (unlatched & AMIS30543::CPFAIL)
+            Serial.println("#   ERROR: Charge pump failure");
     }
     stepper.sleep();
 
@@ -105,7 +128,7 @@ void StepperControl::stepISR() {
         if (instance->stallDetect &&
             ((instance->stepNum % STEP_MODE) == 0)) {
             // ADC read takes ~20us, giving us enough high time on the
-            uint16_t emf = (uint16_t) analogRead(instance->slaPin);
+            auto emf = (uint16_t) analogRead(instance->slaPin);
             // Filter emf
             instance->emfAvg = (instance->emfAvg * 2 + emf) / 3;
             if (instance->emfAvg < STALL_EMF) {

@@ -4,6 +4,7 @@
 #include "StepperLock.h"
 #include "RFIDAuthenticator.h"
 #include "SerialAuthenticator.h"
+#include "ButtonAuthenticator.h"
 
 static const unsigned int STEPPER_SPEED = 700;
 static const unsigned int STEPPER_CURRENT = 1800;
@@ -19,8 +20,10 @@ StepperLock lock(stepperControl);
 
 RFIDAuthenticator rfidAuthenticator(2, 3);
 SerialAuthenticator serialAuthenticator(lock);
+ButtonAuthenticator buttonAuthenticator;
 Authenticator *authenticators[] = {&rfidAuthenticator,
-                                   &serialAuthenticator};
+                                   &serialAuthenticator,
+                                   &buttonAuthenticator};
 
 void sleep();
 
@@ -81,6 +84,7 @@ void loop() {
 void sleep() {
     noInterrupts();
     sleep_enable();
+    sleep_bod_disable();
     interrupts();
     sleep_cpu();
     sleep_disable();
