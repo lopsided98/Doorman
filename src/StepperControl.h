@@ -14,6 +14,13 @@ public:
     void init();
 
     /**
+     * Set the current supplied to the stepper in milliamps.
+     *
+     * @param current current in milliamps
+     */
+    void setCurrent(uint16_t current);
+
+    /**
      * Set the speed of the stepper in degrees/sec.
      *
      * @param speed speed in degrees/sec
@@ -46,6 +53,8 @@ private:
     void stop();
 
     static void stepISR();
+
+    void selfTest();
 };
 
 #endif //DOORMAN_STEPPERCONTROL_H

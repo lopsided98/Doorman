@@ -12,18 +12,23 @@ static const unsigned int STEPPER_STEPS_PER_REVOLUTION = 200;
 static const uint8_t STEPPER_SS_PIN = 10;
 static const uint8_t STEPPER_NXT_PIN = 8;
 static const uint8_t STEPPER_SLA_PIN = A1;
+static const uint8_t RFID_RX_PIN = 2;
+static const uint8_t RFID_TX_PIN = 3;
+static const uint8_t BUTTON_PIN = 7;
 
 AMIS30543 stepperDriver;
 StepperControl stepperControl(stepperDriver, STEPPER_NXT_PIN, STEPPER_SLA_PIN,
                               STEPPER_STEPS_PER_REVOLUTION);
 StepperLock lock(stepperControl);
 
-RFIDAuthenticator rfidAuthenticator(2, 3);
+RFIDAuthenticator rfidAuthenticator(RFID_RX_PIN, RFID_TX_PIN);
 SerialAuthenticator serialAuthenticator(lock);
-ButtonAuthenticator buttonAuthenticator;
-Authenticator *authenticators[] = {&rfidAuthenticator,
-                                   &serialAuthenticator,
-                                   &buttonAuthenticator};
+ButtonAuthenticator buttonAuthenticator(BUTTON_PIN);
+Authenticator *authenticators[] = {
+        &rfidAuthenticator,
+        &serialAuthenticator,
+        &buttonAuthenticator
+};
 
 void sleep();
 
@@ -39,14 +44,11 @@ void setup() {
     SPI.begin();
     stepperDriver.init(STEPPER_SS_PIN);
     // Wait for driver to start
-    delay(1);
-
-    // Initialize driver
-    stepperDriver.resetSettings();
-    stepperDriver.setCurrentMilliamps(STEPPER_CURRENT);
+    delayMicroseconds(1000);
 
     // Initialize control algorithm
     stepperControl.init();
+    stepperControl.setCurrent(STEPPER_CURRENT);
     stepperControl.setSpeed(STEPPER_SPEED);
     lock.init();
 
@@ -55,8 +57,11 @@ void setup() {
     power_twi_disable();
     set_sleep_mode(SLEEP_MODE_IDLE);
 
-    Serial.println("# Initialization complete.");
+    Serial.println("# Initialization complete");
     delay(100);
+
+    // Clear MCU Status Register (reset status)
+    MCUSR = 0;
 }
 
 void loop() {
@@ -84,7 +89,6 @@ void loop() {
 void sleep() {
     noInterrupts();
     sleep_enable();
-    sleep_bod_disable();
     interrupts();
     sleep_cpu();
     sleep_disable();

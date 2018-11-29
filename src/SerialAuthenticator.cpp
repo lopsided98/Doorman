@@ -55,5 +55,4 @@ void SerialAuthenticator::printStatus() {
     Serial.print('s');
     Serial.print(lock.isLocked() ? 'l' : 'u');
     Serial.print('\n');
-
 }

@@ -3,9 +3,22 @@
 #include <avr/sleep.h>
 #include "StepperControl.h"
 
+static const unsigned int NXT_TIME = 3; // us
 static const AMIS30543::stepMode STEP_MODE = AMIS30543::stepMode::MicroStep32;
-static const unsigned int DEFAULT_SPEED = 360;
+static const uint16_t DEFAULT_CURRENT = 1800;
+static const unsigned int DEFAULT_SPEED = 700;
 static const uint16_t STALL_EMF = 125;
+
+static const unsigned int SELF_TEST_CURRENT = 700;
+static const unsigned int OVERCURRENT_FLAGS =
+        AMIS30543::OVCXNB |
+        AMIS30543::OVCXNT |
+        AMIS30543::OVCXPB |
+        AMIS30543::OVCXPT |
+        AMIS30543::OVCYNB |
+        AMIS30543::OVCYNT |
+        AMIS30543::OVCYPB |
+        AMIS30543::OVCYPT;
 
 StepperControl *StepperControl::instance = nullptr;
 
@@ -29,7 +42,7 @@ void StepperControl::init() {
     cbi(ADCSRA, ADPS0);
 
     // Initialize settings
-    stepper.setStepMode(STEP_MODE);
+    stepper.resetSettings();
     stepper.stepOnRisingEdge();
 
     // Turn SLA transparency off to avoid spikes in the signal. I was going to
@@ -41,41 +54,24 @@ void StepperControl::init() {
     stepper.setSlaTransparencyOff();
 
     stepper.enableDriver();
-    {
-        Serial.println("# Checking for errors:");
-        uint16_t latched = stepper.readLatchedStatusFlagsAndClear();
-        uint16_t unlatched = stepper.readNonLatchedStatusFlags();
-        if (latched & (
-                AMIS30543::OVCXNB |
-                AMIS30543::OVCXNT |
-                AMIS30543::OVCXPB |
-                AMIS30543::OVCXPT |
-                AMIS30543::OVCYNB |
-                AMIS30543::OVCYNT |
-                AMIS30543::OVCYPB |
-                AMIS30543::OVCYPT
-        )) {
-            // Short detected, emergency shut down
-            stepper.disableDriver();
-            Serial.println("#   ERROR: Coil short");
-            // Power down until reset
-            noInterrupts();
-            set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-            sleep_enable();
-            sleep_bod_disable();
-            sleep_cpu();
-        }
-        if (unlatched & AMIS30543::TW)
-            Serial.println("#   ERROR: Thermal shutdown");
-        if (unlatched & AMIS30543::CPFAIL)
-            Serial.println("#   ERROR: Charge pump failure");
-    }
+
+    // Run self test (will block if there is an error that could damage
+    // hardware)
+    selfTest();
+
+    // Set after self test because test uses a different mode
+    stepper.setStepMode(STEP_MODE);
     stepper.sleep();
 
     Timer1.initialize();
+    setCurrent(DEFAULT_CURRENT);
     setSpeed(DEFAULT_SPEED);
     Timer1.stop();
     Timer1.attachInterrupt(StepperControl::stepISR);
+}
+
+void StepperControl::setCurrent(const uint16_t current) {
+    stepper.setCurrentMilliamps(current);
 }
 
 void StepperControl::setSpeed(const unsigned int speed) {
@@ -137,7 +133,7 @@ void StepperControl::stepISR() {
         } else {
             // If we don't read the ADC, we have add a busy wait to ensure the
             // pin stays high long enough
-            delayMicroseconds(3);
+            delayMicroseconds(NXT_TIME);
         }
         instance->nxtPin.lowI();
         instance->stepNum += (instance->direction) ? 1 : -1;
@@ -149,5 +145,129 @@ void StepperControl::stepISR() {
     if (!instance->running) {
         Timer1.stop();
         instance->stepper.sleep();
+    }
+}
+
+void StepperControl::selfTest() {
+    // Overly in-depth self test routine
+
+    uint16_t unlatched_errors = 0;
+    uint16_t latched_errors = 0;
+    int8_t position = -1;
+
+    // Only run full self test on power on
+    if (!bitRead(MCUSR, PORF)) {
+        Serial.println("# Checking for motor errors...");
+        unlatched_errors = stepper.readNonLatchedStatusFlags();
+        latched_errors = stepper.readLatchedStatusFlagsAndClear();
+    } else {
+        Serial.println("# Running motor self test...");
+
+        stepper.setCurrentMilliamps(SELF_TEST_CURRENT);
+
+        stepper.setStepMode(AMIS30543::stepMode::MicroStep128);
+        // Distance in 1/128 microsteps from 45 degree position
+        uint16_t offset = stepper.readPosition() & 0b111111;
+        if (offset > 32) {
+            offset = 64 - offset;
+            stepper.setDirection(true);
+        } else {
+            stepper.setDirection(false);
+        }
+        // Shift into a 45 degree position
+        for (; offset > 0; --offset) {
+            nxtPin.high();
+            delayMicroseconds(NXT_TIME);
+            nxtPin.low();
+            delayMicroseconds(100);
+        }
+
+        position = static_cast<int8_t>(
+                (stepper.readPosition() & 0b111000000) >> 6);
+
+        unlatched_errors |= stepper.readNonLatchedStatusFlags();
+        latched_errors = stepper.readLatchedStatusFlagsAndClear();
+        if (latched_errors) goto error;
+
+        // Switch to full step mode (w/ 45 degree phase shift)
+        stepper.setStepMode(AMIS30543::stepMode::CompensatedFullOnePhaseOn);
+        stepper.setDirection(true);
+
+        // Shift forward 90 degrees
+        nxtPin.high();
+        delayMicroseconds(NXT_TIME);
+        nxtPin.low();
+        delayMicroseconds(50000);
+        ++position;
+
+        unlatched_errors |= stepper.readNonLatchedStatusFlags();
+        latched_errors = stepper.readLatchedStatusFlagsAndClear();
+        if (latched_errors) goto error;
+
+        // Shift forward 90 degrees
+        nxtPin.high();
+        delayMicroseconds(NXT_TIME);
+        nxtPin.low();
+        delayMicroseconds(50000);
+        ++position;
+
+        unlatched_errors |= stepper.readNonLatchedStatusFlags();
+        latched_errors = stepper.readLatchedStatusFlagsAndClear();
+        if (latched_errors) goto error;
+
+        // Shift back 270 degrees
+        stepper.setDirection(false);
+        for (uint8_t i = 0; i < 2; --i) {
+            nxtPin.high();
+            delayMicroseconds(NXT_TIME);
+            nxtPin.low();
+            delayMicroseconds(50000);
+            --position;
+        }
+
+        unlatched_errors |= stepper.readNonLatchedStatusFlags();
+        latched_errors = stepper.readLatchedStatusFlagsAndClear();
+        if (latched_errors) goto error;
+
+        // Shift forward 90 degrees (to starting position)
+        nxtPin.high();
+        delayMicroseconds(NXT_TIME);
+        nxtPin.low();
+        delayMicroseconds(50000);
+
+    }
+    error:
+
+    if (unlatched_errors & AMIS30543::TW)
+        Serial.println("#   WARNING: Thermal warning limit exceeded");
+    if (unlatched_errors & AMIS30543::CPFAIL)
+        Serial.println("#   ERROR: Charge pump failure");
+    if (unlatched_errors & AMIS30543::OPENX)
+        Serial.println("#   ERROR: Coil X open");
+    if (unlatched_errors & AMIS30543::OPENY)
+        Serial.println("#   ERROR: Coil Y open");
+
+    if (latched_errors & AMIS30543::latchedStatusFlag::TSD)
+        Serial.println("#   ERROR: Thermal shutdown");
+
+    if (latched_errors & OVERCURRENT_FLAGS) {
+        // Short detected, emergency shut down
+        stepper.disableDriver();
+        Serial.print("#   ERROR: Coil short, position: ");
+        if (position == -1) {
+            Serial.print("unknown");
+        } else {
+            Serial.print(position);
+        }
+        Serial.print(", flags: 0x");
+        Serial.println(latched_errors, 16);
+        Serial.println("#   Shutting down");
+        Serial.flush();
+        // Power down until reset
+        noInterrupts();
+        set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+        sleep_enable();
+        sleep_bod_disable();
+        sleep_cpu();
     }
 }
