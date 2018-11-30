@@ -165,76 +165,38 @@ void StepperControl::selfTest() {
 
         stepper.setCurrentMilliamps(SELF_TEST_CURRENT);
 
-        stepper.setStepMode(AMIS30543::stepMode::MicroStep128);
-        // Distance in 1/128 microsteps from 45 degree position
-        uint16_t offset = stepper.readPosition() & 0b111111;
-        if (offset > 32) {
-            offset = 64 - offset;
-            stepper.setDirection(true);
-        } else {
-            stepper.setDirection(false);
-        }
-        // Shift into a 45 degree position
-        for (; offset > 0; --offset) {
+        stepper.setStepMode(AMIS30543::stepMode::CompensatedHalf);
+
+        // Only runs on power on, so position will always be reset to 0
+        position = 0;
+
+        // Rotate through all electrical positions
+        stepper.setDirection(true);
+        for (uint8_t i = 0; i < 7; ++i) {
             nxtPin.high();
             delayMicroseconds(NXT_TIME);
             nxtPin.low();
-            delayMicroseconds(100);
+            delayMicroseconds(50000);
+            ++position;
+
+            unlatched_errors |= stepper.readNonLatchedStatusFlags();
+            latched_errors = stepper.readLatchedStatusFlagsAndClear();
+            if (latched_errors) goto error;
         }
 
-        position = static_cast<int8_t>(
-                (stepper.readPosition() & 0b111000000) >> 6);
-
-        unlatched_errors |= stepper.readNonLatchedStatusFlags();
-        latched_errors = stepper.readLatchedStatusFlagsAndClear();
-        if (latched_errors) goto error;
-
-        // Switch to full step mode (w/ 45 degree phase shift)
-        stepper.setStepMode(AMIS30543::stepMode::CompensatedFullOnePhaseOn);
-        stepper.setDirection(true);
-
-        // Shift forward 90 degrees
-        nxtPin.high();
-        delayMicroseconds(NXT_TIME);
-        nxtPin.low();
-        delayMicroseconds(50000);
-        ++position;
-
-        unlatched_errors |= stepper.readNonLatchedStatusFlags();
-        latched_errors = stepper.readLatchedStatusFlagsAndClear();
-        if (latched_errors) goto error;
-
-        // Shift forward 90 degrees
-        nxtPin.high();
-        delayMicroseconds(NXT_TIME);
-        nxtPin.low();
-        delayMicroseconds(50000);
-        ++position;
-
-        unlatched_errors |= stepper.readNonLatchedStatusFlags();
-        latched_errors = stepper.readLatchedStatusFlagsAndClear();
-        if (latched_errors) goto error;
-
-        // Shift back 270 degrees
+        // Rotate back to start
         stepper.setDirection(false);
-        for (uint8_t i = 0; i < 2; --i) {
+        for (uint8_t i = 0; i < 7; --i) {
             nxtPin.high();
             delayMicroseconds(NXT_TIME);
             nxtPin.low();
             delayMicroseconds(50000);
             --position;
+
+            unlatched_errors |= stepper.readNonLatchedStatusFlags();
+            latched_errors = stepper.readLatchedStatusFlagsAndClear();
+            if (latched_errors) goto error;
         }
-
-        unlatched_errors |= stepper.readNonLatchedStatusFlags();
-        latched_errors = stepper.readLatchedStatusFlagsAndClear();
-        if (latched_errors) goto error;
-
-        // Shift forward 90 degrees (to starting position)
-        nxtPin.high();
-        delayMicroseconds(NXT_TIME);
-        nxtPin.low();
-        delayMicroseconds(50000);
-
     }
     error:
 
