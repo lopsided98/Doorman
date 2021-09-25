@@ -4,8 +4,6 @@
 #include "Authenticator.h"
 #include "Lock.h"
 
-#define SERIAL_AUTHENTICATOR_BUFFER_LENGTH 50
-
 class SerialAuthenticator : public Authenticator {
 
 public:
@@ -16,10 +14,10 @@ public:
 
 private:
 
-    unsigned int commandBufferPos = 0;
-    char commandBuffer[SERIAL_AUTHENTICATOR_BUFFER_LENGTH];
+    unsigned int commandBufferPos{0};
+    char commandBuffer[50];
 
-    bool wasLocked = false;
+    bool wasLocked{false};
     Lock& lock;
 
     Command parseLockCommand(char *buffer);

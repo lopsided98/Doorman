@@ -3,14 +3,16 @@
 #include <avr/sleep.h>
 #include "StepperControl.h"
 
-static const unsigned int NXT_TIME = 3; // us
-static const AMIS30543::stepMode STEP_MODE = AMIS30543::stepMode::MicroStep32;
-static const uint16_t DEFAULT_CURRENT = 1800;
-static const unsigned int DEFAULT_SPEED = 700;
-static const uint16_t STALL_EMF = 125;
+namespace {
 
-static const unsigned int SELF_TEST_CURRENT = 700;
-static const unsigned int OVERCURRENT_FLAGS =
+const unsigned int NXT_TIME{3}; // us
+const AMIS30543::stepMode STEP_MODE{AMIS30543::stepMode::MicroStep32};
+const uint16_t DEFAULT_CURRENT{1800};
+const unsigned int DEFAULT_SPEED{700};
+const uint16_t STALL_EMF{125};
+
+const unsigned int SELF_TEST_CURRENT{700};
+const unsigned int OVERCURRENT_FLAGS{
         AMIS30543::OVCXNB |
         AMIS30543::OVCXNT |
         AMIS30543::OVCXPB |
@@ -18,7 +20,10 @@ static const unsigned int OVERCURRENT_FLAGS =
         AMIS30543::OVCYNB |
         AMIS30543::OVCYNT |
         AMIS30543::OVCYPB |
-        AMIS30543::OVCYPT;
+        AMIS30543::OVCYPT
+};
+
+}
 
 StepperControl *StepperControl::instance = nullptr;
 
@@ -51,7 +56,7 @@ void StepperControl::init() {
     // but for some reason I can't sample at the correct step consistently. The
     // current algorithm should work fine as long as the chip does not get too
     // hot and cause the signal to sag.
-    stepper.setSlaTransparencyOff();
+    stepper.setSlaTransparencyOn();
 
     stepper.enableDriver();
 

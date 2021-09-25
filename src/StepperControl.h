@@ -41,12 +41,12 @@ private:
 
     const uint32_t stepsPerRevolution;
 
-    volatile bool running = false;
-    volatile uint32_t steps = 0;
-    volatile bool direction = false;
-    volatile uint8_t stepNum = 0;
-    volatile bool stallDetect = false;
-    volatile uint16_t emfAvg = 1023;
+    volatile bool running{false};
+    volatile uint32_t steps{0};
+    volatile bool direction{false};
+    volatile uint8_t stepNum{0};
+    volatile bool stallDetect{false};
+    volatile uint16_t emfAvg{1023};
 
     void start();
 

@@ -8,11 +8,11 @@ Authenticator::Command SerialAuthenticator::getCommand() {
     bool commandComplete = false;
     while (Serial.available()) {
         int c = Serial.read();
-        if (commandBufferPos < SERIAL_AUTHENTICATOR_BUFFER_LENGTH) {
+        if (commandBufferPos < sizeof(commandBuffer)) {
             commandBuffer[commandBufferPos++] = (char) c;
         }
         if (c == '\r' || c == '\n') {
-            if (commandBufferPos <= SERIAL_AUTHENTICATOR_BUFFER_LENGTH) {
+            if (commandBufferPos <= sizeof(commandBuffer)) {
                 commandComplete = true;
             }
             commandBufferPos = 0;

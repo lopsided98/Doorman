@@ -18,7 +18,7 @@ Authenticator::Command ButtonAuthenticator::getCommand() {
     }
     wasPressed = curPressed;
 
-    if ((curTime - lastBounceTime) > DEBOUNCE_TIME) {
+    if ((curTime - lastBounceTime) > DEBOUNCE_MS) {
         if (curPressed != pressed) {
             pressed = curPressed;
             if (curPressed) {

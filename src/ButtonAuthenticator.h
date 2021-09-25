@@ -7,7 +7,7 @@
 class ButtonAuthenticator : public Authenticator {
 public:
 
-    static const unsigned long DEBOUNCE_TIME = 50; // ms
+    static const unsigned long DEBOUNCE_MS{50}; // ms
 
     explicit ButtonAuthenticator(uint8_t pin);
 
@@ -17,7 +17,7 @@ public:
 
 private:
     PinIO pin;
-    unsigned long lastBounceTime = 0;
-    bool pressed = false;
-    bool wasPressed = false;
+    unsigned long lastBounceTime{0};
+    bool pressed{false};
+    bool wasPressed{false};
 };
