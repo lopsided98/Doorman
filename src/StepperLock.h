@@ -1,8 +1,9 @@
 #ifndef DOORMAN_STEPPERLOCK_H
 #define DOORMAN_STEPPERLOCK_H
 
-#include <Arduino.h>
 #include <AMIS30543.h>
+#include <Arduino.h>
+
 #include "Lock.h"
 #include "StepperControl.h"
 
@@ -20,4 +21,4 @@ private:
     StepperControl &stepper;
 };
 
-#endif //DOORMAN_STEPPERLOCK_H
+#endif  // DOORMAN_STEPPERLOCK_H

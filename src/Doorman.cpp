@@ -1,34 +1,40 @@
 #include <Arduino.h>
-#include <avr/sleep.h>
 #include <avr/power.h>
-#include "StepperLock.h"
+#include <avr/sleep.h>
+
+#include "ButtonAuthenticator.h"
 #include "RFIDAuthenticator.h"
 #include "SerialAuthenticator.h"
-#include "ButtonAuthenticator.h"
+#include "StepperLock.h"
 
-static const unsigned int STEPPER_SPEED = 700;
-static const unsigned int STEPPER_CURRENT = 1800;
-static const unsigned int STEPPER_STEPS_PER_REVOLUTION = 200;
-static const uint8_t STEPPER_SS_PIN = 10;
-static const uint8_t STEPPER_NXT_PIN = 8;
-static const uint8_t STEPPER_SLA_PIN = A1;
-static const uint8_t RFID_RX_PIN = 2;
-static const uint8_t RFID_TX_PIN = 3;
-static const uint8_t BUTTON_PIN = 7;
+namespace {
+
+const unsigned int STEPPER_SPEED{700};
+const unsigned int STEPPER_CURRENT{1800};
+const unsigned int STEPPER_STEPS_PER_REVOLUTION{200};
+const uint8_t STEPPER_SS_PIN{10};
+const uint8_t STEPPER_NXT_PIN{8};
+const uint8_t STEPPER_SLA_PIN{A1};
+const uint8_t RFID_RX_PIN{2};
+const uint8_t RFID_TX_PIN{3};
+const uint8_t BUTTON_PIN{7};
 
 AMIS30543 stepperDriver;
-StepperControl stepperControl(stepperDriver, STEPPER_NXT_PIN, STEPPER_SLA_PIN,
-                              STEPPER_STEPS_PER_REVOLUTION);
-StepperLock lock(stepperControl);
+StepperControl stepperControl{stepperDriver, STEPPER_NXT_PIN, STEPPER_SLA_PIN,
+                              STEPPER_STEPS_PER_REVOLUTION};
+StepperLock lock{stepperControl};
 
-RFIDAuthenticator rfidAuthenticator(RFID_RX_PIN, RFID_TX_PIN);
-SerialAuthenticator serialAuthenticator(lock);
-ButtonAuthenticator buttonAuthenticator(BUTTON_PIN);
-Authenticator *authenticators[] = {
-        &rfidAuthenticator,
-        &serialAuthenticator,
-        &buttonAuthenticator
+SerialAuthenticator serialAuthenticator{lock};
+ButtonAuthenticator buttonAuthenticator{BUTTON_PIN};
+RFIDAuthenticator rfidAuthenticator{RFID_RX_PIN, RFID_TX_PIN,
+                                    buttonAuthenticator};
+Authenticator *authenticators[]{
+    &serialAuthenticator,
+    &buttonAuthenticator,
+    &rfidAuthenticator,
 };
+
+}  // namespace
 
 void sleep();
 

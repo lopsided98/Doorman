@@ -1,14 +1,12 @@
 #ifndef DOORMAN_STEPPERCONTROL_H
 #define DOORMAN_STEPPERCONTROL_H
 
-#include <DigitalIO.h>
 #include <AMIS30543.h>
+#include <DigitalIO.h>
 
 class StepperControl {
 public:
-
-    StepperControl(AMIS30543 &stepper,
-                   uint8_t nxtPin, uint8_t slaPin,
+    StepperControl(AMIS30543 &stepper, uint8_t nxtPin, uint8_t slaPin,
                    unsigned int stepsPerRevolution);
 
     void init();
@@ -27,11 +25,9 @@ public:
      */
     void setSpeed(unsigned int speed);
 
-    void rotate(int degrees, bool block = true,
-                bool stallDetect = false);
+    void rotate(int degrees, bool block = true, bool stallDetect = false);
 
 private:
-
     static StepperControl *instance;
 
     AMIS30543 &stepper;
@@ -57,4 +53,4 @@ private:
     void selfTest();
 };
 
-#endif //DOORMAN_STEPPERCONTROL_H
+#endif  // DOORMAN_STEPPERCONTROL_H

@@ -3,7 +3,7 @@
 
 class Lock {
 public:
-    virtual void init() {};
+    virtual void init(){};
 
     virtual void unlock();
 
@@ -14,8 +14,7 @@ public:
     virtual bool isLocked();
 
 protected:
-
     bool locked{false};
 };
 
-#endif // DOORMAN_LOCK_H
+#endif  // DOORMAN_LOCK_H

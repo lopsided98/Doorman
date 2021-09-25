@@ -1,15 +1,15 @@
-#include <Arduino.h>
 #include "SerialAuthenticator.h"
 
-SerialAuthenticator::SerialAuthenticator(Lock &lock) : lock(lock) {
-}
+#include <Arduino.h>
+
+SerialAuthenticator::SerialAuthenticator(Lock &lock) : lock(lock) {}
 
 Authenticator::Command SerialAuthenticator::getCommand() {
     bool commandComplete = false;
     while (Serial.available()) {
         int c = Serial.read();
         if (commandBufferPos < sizeof(commandBuffer)) {
-            commandBuffer[commandBufferPos++] = (char) c;
+            commandBuffer[commandBufferPos++] = static_cast<char>(c);
         }
         if (c == '\r' || c == '\n') {
             if (commandBufferPos <= sizeof(commandBuffer)) {

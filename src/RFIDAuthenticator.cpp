@@ -1,13 +1,17 @@
-#include <EEPROM.h>
 #include "RFIDAuthenticator.h"
+
+#include <EEPROM.h>
 
 namespace {
 
 const uint8_t MAGIC_BYTE{0x7C};
 const uint16_t MAGIC_BYTE_ADDR{0x0};
 
-const uint16_t LENGTH_ADDR{0x1};
-const uint16_t DATA_START_ADDR{0x3};
+const uint16_t LENGTH_ADDR{MAGIC_BYTE_ADDR + 1};
+const uint16_t DATA_START_ADDR{LENGTH_ADDR + sizeof(uint16_t)};
+
+/// Minimum button hold time in milliseconds to activate card enrollment mode.
+const unsigned long BUTTON_ENROLL_MS{5000};
 
 void write_uint16(uint16_t addr, uint16_t val) {
     EEPROM[addr] = (val >> 8) & 0xff;
@@ -30,17 +34,18 @@ void write_uint32(uint16_t addr, uint32_t val) {
 
 uint32_t read_uint32(uint16_t addr) {
     uint32_t val = 0;
-    val |= (((uint32_t) EEPROM[addr]) << 24) & 0xff000000L;
-    val |= (((uint32_t) EEPROM[addr + 1]) << 16) & 0xff0000L;
-    val |= (((uint32_t) EEPROM[addr + 2]) << 8) & 0xff00L;
+    val |= (((uint32_t)EEPROM[addr]) << 24) & 0xff000000L;
+    val |= (((uint32_t)EEPROM[addr + 1]) << 16) & 0xff0000L;
+    val |= (((uint32_t)EEPROM[addr + 2]) << 8) & 0xff00L;
     val |= EEPROM[addr + 3] & 0xffL;
     return val;
 }
 
-}
+}  // namespace
 
-RFIDAuthenticator::RFIDAuthenticator(const uint8_t rx, const uint8_t tx) :
-        rfid(rx, tx) {
+RFIDAuthenticator::RFIDAuthenticator(const uint8_t rx, const uint8_t tx,
+                                     ButtonAuthenticator& button)
+    : rfid(rx, tx), button(button) {
     if (EEPROM[MAGIC_BYTE_ADDR] != MAGIC_BYTE) {
         EEPROM[MAGIC_BYTE_ADDR] = MAGIC_BYTE;
         write_uint16(LENGTH_ADDR, 0);
@@ -51,17 +56,24 @@ RFIDAuthenticator::RFIDAuthenticator(const uint8_t rx, const uint8_t tx) :
 Authenticator::Command RFIDAuthenticator::getCommand() {
     if (rfid.isAvailable()) {
         unsigned long id = rfid.cardNumber();
-        Serial.print("# Scanned tag: ");
+        Serial.print("# Scanned card: ");
         Serial.println(id);
-        if (checkID((uint32_t) id)) return TOGGLE;
+        if (button.getHoldTime() >= BUTTON_ENROLL_MS) {
+            if (enrollID((uint32_t)id)) {
+                Serial.print("# Enrolled card: ");
+                Serial.println(id);
+            }
+        } else if (checkID((uint32_t)id)) {
+            return TOGGLE;
+        }
     }
     return NONE;
 }
 
 bool RFIDAuthenticator::enrollID(uint32_t id) {
     uint16_t length = read_uint16(LENGTH_ADDR);
-    if (((length * 4) + DATA_START_ADDR) <= EEPROM.length() - 4 &&
-        !checkID(id)) {
+    if (!checkID(id) &&
+        ((length * 4) + DATA_START_ADDR) <= EEPROM.length() - 4) {
         write_uint32(DATA_START_ADDR + (length * 4), id);
         write_uint16(LENGTH_ADDR, length + 1);
         return true;

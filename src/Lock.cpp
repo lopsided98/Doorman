@@ -1,5 +1,6 @@
-#include <HardwareSerial.h>
 #include "Lock.h"
+
+#include <HardwareSerial.h>
 
 void Lock::unlock() {
     Serial.println("# Unlocking...");
@@ -19,6 +20,4 @@ void Lock::toggle() {
     }
 }
 
-bool Lock::isLocked() {
-    return locked;
-}
+bool Lock::isLocked() { return locked; }

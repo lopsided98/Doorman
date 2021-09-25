@@ -1,37 +1,34 @@
-#include <TimerOne.h>
-#include <wiring_private.h>
-#include <avr/sleep.h>
 #include "StepperControl.h"
+
+#include <TimerOne.h>
+#include <avr/sleep.h>
+#include <wiring_private.h>
 
 namespace {
 
-const unsigned int NXT_TIME{3}; // us
+const unsigned int NXT_TIME{3};  // us
 const AMIS30543::stepMode STEP_MODE{AMIS30543::stepMode::MicroStep32};
 const uint16_t DEFAULT_CURRENT{1800};
 const unsigned int DEFAULT_SPEED{700};
 const uint16_t STALL_EMF{125};
 
 const unsigned int SELF_TEST_CURRENT{700};
-const unsigned int OVERCURRENT_FLAGS{
-        AMIS30543::OVCXNB |
-        AMIS30543::OVCXNT |
-        AMIS30543::OVCXPB |
-        AMIS30543::OVCXPT |
-        AMIS30543::OVCYNB |
-        AMIS30543::OVCYNT |
-        AMIS30543::OVCYPB |
-        AMIS30543::OVCYPT
-};
+const unsigned int OVERCURRENT_FLAGS{AMIS30543::OVCXNB | AMIS30543::OVCXNT |
+                                     AMIS30543::OVCXPB | AMIS30543::OVCXPT |
+                                     AMIS30543::OVCYNB | AMIS30543::OVCYNT |
+                                     AMIS30543::OVCYPB | AMIS30543::OVCYPT};
 
-}
+}  // namespace
 
 StepperControl *StepperControl::instance = nullptr;
 
 StepperControl::StepperControl(AMIS30543 &stepper, const uint8_t nxtPin,
                                const uint8_t slaPin,
-                               const unsigned int stepsPerRevolution) :
-        stepper(stepper), nxtPin(nxtPin), slaPin(slaPin),
-        stepsPerRevolution(stepsPerRevolution * STEP_MODE) {
+                               const unsigned int stepsPerRevolution)
+    : stepper(stepper),
+      nxtPin(nxtPin),
+      slaPin(slaPin),
+      stepsPerRevolution(stepsPerRevolution * STEP_MODE) {
     if (instance) {
         Timer1.detachInterrupt();
     }
@@ -81,7 +78,7 @@ void StepperControl::setCurrent(const uint16_t current) {
 
 void StepperControl::setSpeed(const unsigned int speed) {
     unsigned long period =
-            (1000000U * 360U) / (abs(speed) * stepsPerRevolution);
+        (1000000U * 360U) / (abs(speed) * stepsPerRevolution);
     noInterrupts();
     Timer1.setPeriod(period);
     interrupts();
@@ -100,13 +97,13 @@ void StepperControl::rotate(const int degrees, const bool block,
 
     if (block) {
         while (running) {
-//            Serial.print("emfAvg: ");
-//            Serial.println(emfAvg);
+            //            Serial.print("emfAvg: ");
+            //            Serial.println(emfAvg);
         }
     }
-//    delayMicroseconds(100);
-//    Serial.print("final: ");
-//    Serial.println(emfAvg);
+    //    delayMicroseconds(100);
+    //    Serial.print("final: ");
+    //    Serial.println(emfAvg);
 }
 
 void StepperControl::start() {
@@ -119,17 +116,14 @@ void StepperControl::start() {
     }
 }
 
-void StepperControl::stop() {
-    running = false;
-}
+void StepperControl::stop() { running = false; }
 
 void StepperControl::stepISR() {
     if (instance->steps > 0) {
         instance->nxtPin.highI();
-        if (instance->stallDetect &&
-            ((instance->stepNum % STEP_MODE) == 0)) {
+        if (instance->stallDetect && ((instance->stepNum % STEP_MODE) == 0)) {
             // ADC read takes ~20us, giving us enough high time on the
-            auto emf = (uint16_t) analogRead(instance->slaPin);
+            auto emf = (uint16_t)analogRead(instance->slaPin);
             // Filter emf
             instance->emfAvg = (instance->emfAvg * 2 + emf) / 3;
             if (instance->emfAvg < STALL_EMF) {
@@ -203,7 +197,7 @@ void StepperControl::selfTest() {
             if (latched_errors) goto error;
         }
     }
-    error:
+error:
 
     if (unlatched_errors & AMIS30543::TW)
         Serial.println("#   WARNING: Thermal warning limit exceeded");

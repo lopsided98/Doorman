@@ -2,9 +2,7 @@
 #define DOORMAN_AUTHENTICATOR_H
 
 class Authenticator {
-
 public:
-
     enum Command {
         NONE = 0,
         UNLOCK,
@@ -12,10 +10,9 @@ public:
         TOGGLE,
     };
 
-    virtual void init() {};
+    virtual void init(){};
 
     virtual Command getCommand() = 0;
 };
 
-
-#endif //DOORMAN_AUTHENTICATOR_H
+#endif  // DOORMAN_AUTHENTICATOR_H

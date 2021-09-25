@@ -1,13 +1,8 @@
-#include <Arduino.h>
 #include "ButtonAuthenticator.h"
 
-ButtonAuthenticator::ButtonAuthenticator(const uint8_t pin) :
-        pin(pin) {
-}
+ButtonAuthenticator::ButtonAuthenticator(const uint8_t pin) : pin(pin) {}
 
-void ButtonAuthenticator::init() {
-    pin.config(INPUT, true);
-}
+void ButtonAuthenticator::init() { pin.config(INPUT, true); }
 
 Authenticator::Command ButtonAuthenticator::getCommand() {
     bool curPressed = !pin.read();
@@ -29,4 +24,10 @@ Authenticator::Command ButtonAuthenticator::getCommand() {
     return NONE;
 }
 
-
+unsigned long ButtonAuthenticator::getHoldTime() {
+    if (pressed) {
+        return millis() - lastBounceTime;
+    } else {
+        return 0;
+    }
+}

@@ -4,11 +4,9 @@
 #include "Lock.h"
 
 class DummyLock : public Lock {
-
     void lock() override;
 
     void unlock() override;
 };
 
-
-#endif //DOORMAN_DUMMYLOCK_H
+#endif  // DOORMAN_DUMMYLOCK_H

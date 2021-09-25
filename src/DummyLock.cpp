@@ -1,6 +1,6 @@
-#include <Arduino.h>
 #include "DummyLock.h"
 
+#include <Arduino.h>
 
 void DummyLock::lock() {
     Lock::lock();
